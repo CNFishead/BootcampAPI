@@ -2,6 +2,8 @@ import Bootcamp from "../models/Bootcamp.js";
 import ErrorResponse from "../utils/errorResponse.js";
 import asyncHandler from "../middleware/async.js";
 import geocoder from "../utils/geoCoder.js";
+import path from "path";
+import slugify from "slugify";
 
 /*
   @Desc:   Return All bootcamps
@@ -9,69 +11,7 @@ import geocoder from "../utils/geoCoder.js";
   @Access: Public
 */
 const getBootcamps = asyncHandler(async (req, res, next) => {
-  let query;
-
-  // Copy req.query
-  const reqQuery = { ...req.query };
-
-  // Fields to exclude
-  const removeFields = ["select", "sort", "page", "limit"];
-
-  // Loop over removeFields and delete them from reqQuery
-  removeFields.forEach((param) => delete reqQuery[param]);
-
-  // Create query string
-  let queryStr = JSON.stringify(reqQuery);
-
-  // Create operators ($gt, $gte, etc)
-  queryStr = queryStr.replace(
-    /\b(gt|gte|lt|lte|in)\b/g,
-    (match) => `$${match}`
-  );
-
-  // Finding resource
-  query = Bootcamp.find(JSON.parse(queryStr)).populate("courses");
-
-  // Select Fields
-  if (req.query.select) {
-    const fields = req.query.select.split(",").join(" ");
-    query = query.select(fields);
-  }
-  // Sort fields
-  if (req.query.sort) {
-    const sortBy = req.query.sort.split(",").join(" ");
-    query = query.sort(sortBy);
-  } else {
-    query.sort("-createdAt");
-  }
-  // Pagination
-  const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 25;
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
-  const total = await Bootcamp.countDocuments();
-  query = query.skip(startIndex).limit(limit);
-
-  // Execute and return
-  const data = await query;
-
-  const pagination = {};
-  if (endIndex < total) {
-    pagination.next = {
-      page: page + 1,
-      limit,
-    };
-  }
-  if (startIndex > 0) {
-    pagination.prev = {
-      page: page - 1,
-      limit,
-    };
-  }
-
-  res
-    .status(200)
-    .json({ success: true, pagination, count: data.length, data: data });
+  res.status(200).json(res.advancedResults);
 });
 /*
   @Desc:   Return single bootcamp
@@ -161,6 +101,71 @@ const getBootcampsInRadius = asyncHandler(async (req, res, next) => {
   });
 });
 
+/*
+  @Desc:   Upload photo for bootcamp
+  @Route:  Put /api/v1/bootcamps/id/photo
+  @Access: Private
+*/
+const bootcampPhotoUpload = asyncHandler(async (req, res, next) => {
+  const bootcamp = await Bootcamp.findById(req.params.id);
+  if (!bootcamp) {
+    return next(
+      // Correctly formatted, but not in the database
+      new ErrorResponse(`No Bootcamp Found with id: ${req.params.id}`, 404)
+    );
+  }
+  if (!req.files) {
+    return next(
+      // Correctly formatted, but not in the database
+      new ErrorResponse(`Please upload a file`, 400)
+    );
+  }
+  const file = req.files.file;
+  // make sure image is a photo
+  if (!file.mimetype.startsWith("image")) {
+    return next(
+      // Correctly formatted, but not in the database
+      new ErrorResponse(`File is of the wrong type`, 400)
+    );
+  }
+  // Check file size
+  if (file.size > process.env.MAX_FILE_UPLOAD) {
+    return next(
+      // Correctly formatted, but not in the database
+      new ErrorResponse(
+        `File was too large, please upload an image less than ${process.env.MAX_FILE_UPLOAD} or 1MB`,
+        400
+      )
+    );
+  }
+
+  // ***NOTE*** Path.parse() returns a {}, youll need to .name to access {name: String} for slugify
+  const fileName = path.parse(file.name);
+
+  // Create custom filename
+  file.name =
+    slugify(`${fileName.name}`, { lower: true }) +
+    `-photo-${bootcamp._id}${path.parse(file.name).ext}`;
+  file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
+    if (err) {
+      console.error(err);
+      return next(
+        // Correctly formatted, but not in the database
+        new ErrorResponse(`Problem with file being moved to filesystem.`, 500)
+      );
+    }
+    // insert filename into database
+    // if you go to (http://localhost:5000/uploads/:filename) itll display the image.
+    // In production change localhost to whatever the servername is and itll serve up the image from the uploads
+    // folder
+    await Bootcamp.findByIdAndUpdate(req.params.id, { photo: file.name });
+    res.status(200).json({
+      success: true,
+      data: file.name,
+    });
+  });
+});
+
 export {
   getBootcamps,
   getBootcamp,
@@ -168,4 +173,5 @@ export {
   updateBootcamp,
   deleteBootcamp,
   getBootcampsInRadius,
+  bootcampPhotoUpload,
 };

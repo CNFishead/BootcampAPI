@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  bootcampPhotoUpload,
   createBootcamp,
   deleteBootcamp,
   getBootcamp,
@@ -7,6 +8,9 @@ import {
   getBootcampsInRadius,
   updateBootcamp,
 } from "../controllers/bootcampController.js";
+import advancedResults from "../middleware/advancedResults.js";
+import Bootcamp from "../models/Bootcamp.js";
+
 const router = express.Router();
 
 // Include other routers
@@ -17,7 +21,10 @@ router.use("/:bootcampId/courses", courseRouter);
 
 // routes specific to the home route,
 // These Routes are public
-router.route("/").get(getBootcamps).post(createBootcamp);
+router
+  .route("/")
+  .get(advancedResults(Bootcamp, "courses"), getBootcamps)
+  .post(createBootcamp);
 
 // routes specific to an :id
 router
@@ -27,6 +34,7 @@ router
   // private
   .put(updateBootcamp)
   .delete(deleteBootcamp);
+router.route("/:id/photo").put(bootcampPhotoUpload);
 
 router.route("/radius/:zipcode/:distance").get(getBootcampsInRadius);
 

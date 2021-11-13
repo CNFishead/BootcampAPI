@@ -6,6 +6,8 @@ import morgan from "morgan";
 import connectDB from "./config/db.js";
 import errorHandler from "./middleware/error.js";
 import courseRoutes from "./routes/courseRoutes.js";
+import fileupload from "express-fileupload";
+import path from "path";
 
 // Load env vars
 dotenv.config({ path: "./config/config.env" });
@@ -22,7 +24,12 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-app.get("/", (req, res) => {});
+app.use(fileupload());
+
+// Set static folder
+const __dirname = path.resolve();
+app.use(express.static(path.join(__dirname, "public")));
+
 // API Routes
 app.use("/api/v1/bootcamps", bootcampRoutes);
 app.use("/api/v1/courses", courseRoutes);
