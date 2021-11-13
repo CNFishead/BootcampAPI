@@ -4,6 +4,8 @@ import colors from "colors";
 import bootcampRoutes from "./routes/bootcampRoutes.js";
 import morgan from "morgan";
 import connectDB from "./config/db.js";
+import errorHandler from "./middleware/error.js";
+import courseRoutes from "./routes/courseRoutes.js";
 
 // Load env vars
 dotenv.config({ path: "./config/config.env" });
@@ -14,6 +16,7 @@ connectDB();
 const app = express();
 // Body Parser, allows to accept body data
 app.use(express.json());
+
 // Dev logging middleware
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -22,6 +25,11 @@ if (process.env.NODE_ENV === "development") {
 app.get("/", (req, res) => {});
 // API Routes
 app.use("/api/v1/bootcamps", bootcampRoutes);
+app.use("/api/v1/courses", courseRoutes);
+
+// Init Middleware
+// Has to be after routes, or the controllers cant use the middleware
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(
