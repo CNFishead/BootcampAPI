@@ -4,6 +4,7 @@ import asyncHandler from "../middleware/async.js";
 import geocoder from "../utils/geoCoder.js";
 import path from "path";
 import slugify from "slugify";
+import { mkdir } from "fs";
 
 /*
   @Desc:   Return All bootcamps
@@ -146,24 +147,44 @@ const bootcampPhotoUpload = asyncHandler(async (req, res, next) => {
   file.name =
     slugify(`${fileName.name}`, { lower: true }) +
     `-photo-${bootcamp._id}${path.parse(file.name).ext}`;
-  file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
-    if (err) {
-      console.error(err);
-      return next(
-        // Correctly formatted, but not in the database
-        new ErrorResponse(`Problem with file being moved to filesystem.`, 500)
-      );
+
+  // resolve __dirname not being defined
+  const __dirname = path.resolve();
+  // Create bootcamp directory if it doesnt exist
+  mkdir(
+    path.join(__dirname, `./public/uploads/${bootcamp.name}${bootcamp._id}`),
+    (err) => {
+      if (err) {
+        return console.log(err);
+      }
     }
-    // insert filename into database
-    // if you go to (http://localhost:5000/uploads/:filename) itll display the image.
-    // In production change localhost to whatever the servername is and itll serve up the image from the uploads
-    // folder
-    await Bootcamp.findByIdAndUpdate(req.params.id, { photo: file.name });
-    res.status(200).json({
-      success: true,
-      data: file.name,
-    });
-  });
+  );
+  file.mv(
+    `${process.env.FILE_UPLOAD_PATH}/${bootcamp.name}${bootcamp._id}/${file.name}`,
+    async (err) => {
+      if (err) {
+        console.error(err);
+        return next(
+          // Correctly formatted, but not in the database
+          new ErrorResponse(`Problem with file being moved to filesystem.`, 500)
+        );
+      }
+      // insert filename into database
+      // if you go to (http://localhost:5000/uploads/:filename) itll display the image.
+      // In production change localhost to whatever the servername is and itll serve up the image from the uploads
+      // folder
+      console.log(
+        `${process.env.FILE_UPLOAD_PATH}/${bootcamp.name}${bootcamp._id}/${file.name}`
+      );
+      await Bootcamp.findByIdAndUpdate(req.params.id, {
+        photo: `${proccess.env.SERVER_NAME}/uploads/${bootcamp.name}${bootcamp._id}/${file.name}`,
+      });
+      res.status(200).json({
+        success: true,
+        data: file.name,
+      });
+    }
+  );
 });
 
 export {

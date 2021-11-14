@@ -9,7 +9,7 @@ import {
 } from "../controllers/courseController.js";
 import Course from "../models/Course.js";
 import advancedResults from "../middleware/advancedResults.js";
-
+import { protect, authorize } from "../middleware/auth.js";
 router
   .route("/")
   .get(
@@ -19,7 +19,11 @@ router
     }),
     getCourses
   )
-  .post(createNewCourse);
-router.route("/:id").get(getCourse).put(updateCourse).delete(deleteCourse);
+  .post(protect, authorize("publisher", "admin"), createNewCourse);
+router
+  .route("/:id")
+  .get(getCourse)
+  .put(protect, authorize("publisher", "admin"), updateCourse)
+  .delete(protect, authorize("publisher", "admin"), deleteCourse);
 
 export default router;

@@ -10,6 +10,7 @@ import {
 } from "../controllers/bootcampController.js";
 import advancedResults from "../middleware/advancedResults.js";
 import Bootcamp from "../models/Bootcamp.js";
+import { protect, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ router.use("/:bootcampId/courses", courseRouter);
 router
   .route("/")
   .get(advancedResults(Bootcamp, "courses"), getBootcamps)
-  .post(createBootcamp);
+  .post(protect, authorize("publisher", "admin"), createBootcamp);
 
 // routes specific to an :id
 router
@@ -32,9 +33,11 @@ router
   // public
   .get(getBootcamp)
   // private
-  .put(updateBootcamp)
-  .delete(deleteBootcamp);
-router.route("/:id/photo").put(bootcampPhotoUpload);
+  .put(protect, authorize("publisher", "admin"), updateBootcamp)
+  .delete(protect, authorize("publisher", "admin"), deleteBootcamp);
+router
+  .route("/:id/photo")
+  .put(protect, authorize("publisher", "admin"), bootcampPhotoUpload);
 
 router.route("/radius/:zipcode/:distance").get(getBootcampsInRadius);
 
