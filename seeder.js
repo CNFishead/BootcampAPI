@@ -14,45 +14,53 @@ const __dirname = path.resolve();
 import Bootcamp from "./models/Bootcamp.js";
 import Course from "./models/Course.js";
 import User from "./models/User.js";
+import Review from "./models/Review.js";
 
 // Connect to DB
 await mongoose.connect(process.env.MONGO_URI);
 
-// target the file, parse the data
+// Read JSON files
 const bootcamps = JSON.parse(
   fs.readFileSync(`${__dirname}/data/bootcamps.json`, "utf-8")
 );
+
 const courses = JSON.parse(
   fs.readFileSync(`${__dirname}/data/courses.json`, "utf-8")
 );
+
 const users = JSON.parse(
   fs.readFileSync(`${__dirname}/data/users.json`, "utf-8")
 );
 
-// Import data to db
+const reviews = JSON.parse(
+  fs.readFileSync(`${__dirname}/data/reviews.json`, "utf-8")
+);
+
+// Import into DB
 const importData = async () => {
   try {
     await Bootcamp.create(bootcamps);
     await Course.create(courses);
     await User.create(users);
-    console.log("Data was imported".green.inverse);
+    await Review.create(reviews);
+    console.log("Data Imported...".green.inverse);
     process.exit();
-  } catch (e) {
-    console.log(e);
-    process.exit(-1);
+  } catch (err) {
+    console.error(err);
   }
 };
 
+// Delete data
 const deleteData = async () => {
   try {
     await Bootcamp.deleteMany();
     await Course.deleteMany();
     await User.deleteMany();
-    console.log("Data destroyed".red.inverse);
+    await Review.deleteMany();
+    console.log("Data Destroyed...".red.inverse);
     process.exit();
-  } catch (e) {
-    console.log(e);
-    process.exit(-1);
+  } catch (err) {
+    console.error(err);
   }
 };
 

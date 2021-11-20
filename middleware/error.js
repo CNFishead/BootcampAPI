@@ -9,7 +9,7 @@ const errorHandler = (error, req, res, next) => {
 
   // Mongoose Bad Object ID
   if (err.name === "CastError") {
-    const message = `No Bootcamp Found with id: ${error.value}`;
+    const message = `No Resource Found with id: ${error.value}`;
     err = new ErrorResponse(message, 404);
   }
   // Mongoose Duplicate key error
@@ -19,9 +19,7 @@ const errorHandler = (error, req, res, next) => {
   }
   // Mongoose Validation error
   if (err.message.includes("validation failed")) {
-    const message = Object.values(err.errors).map(
-      (value) => value.message
-    );
+    const message = Object.values(err.errors).map((value) => value.message);
     err = new ErrorResponse(message, 400);
   }
   res

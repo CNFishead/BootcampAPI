@@ -49,12 +49,51 @@ const login = asyncHandler(async (req, res, next) => {
   sendTokenResponse(user, 200, res);
 });
 
-/* @desc Get current logged in user
-   @route POST /api/v1/auth/me
+/* @desc   Get current logged in user
+   @route  POST /api/v1/auth/me
    @access Private
  */
 const getMe = asyncHandler(async (req, res, nex) => {
   const user = await User.findById(req.user.id);
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+});
+
+/* @desc   Update password
+   @route  POST /api/v1/auth/updatepassword
+   @access Private
+ */
+const updatePassword = asyncHandler(async (req, res, nex) => {
+  // find user, and add password to returned object
+  const user = await User.findById(req.user.id).select("+password");
+
+  // Check current password
+  if (!(await user.matchPassword(req.body.currentPassword))) {
+    return nex(new ErrorResponse("Password is incorrect", 401));
+  }
+  // set password, password will hash itself before saving
+  user.password = req.body.newPassword;
+  await user.save();
+
+  sendTokenResponse(user, 200, res);
+});
+
+/* @desc   Update user details
+   @route  PUT /api/v1/auth/updatedetails
+   @access Private
+ */
+const updateDetails = asyncHandler(async (req, res, nex) => {
+  const fieldsToUpdate = {
+    name: req.body.name,
+    email: req.body.email,
+  };
+
+  const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+    new: true,
+    runValidators: true,
+  });
   res.status(200).json({
     success: true,
     data: user,
@@ -142,4 +181,12 @@ const sendTokenResponse = (user, statusCode, res) => {
     .json({ success: true, token });
 };
 
-export { register, login, getMe, forgotPassword, resetPassword };
+export {
+  register,
+  login,
+  getMe,
+  forgotPassword,
+  resetPassword,
+  updateDetails,
+  updatePassword,
+};

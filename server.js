@@ -10,7 +10,8 @@ import fileupload from "express-fileupload";
 import cookieParser from "cookie-parser";
 import path from "path";
 import authRoutes from "./routes/authRoutes.js";
-
+import userRoutes from "./routes/userRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 // Load env vars
 dotenv.config({ path: "./config/config.env" });
 
@@ -37,6 +38,8 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/v1/bootcamps", bootcampRoutes);
 app.use("/api/v1/courses", courseRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/reviews", reviewRoutes);
 
 // Init Middleware
 // Has to be after routes, or the controllers cant use the middleware
