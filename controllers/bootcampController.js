@@ -218,7 +218,7 @@ const bootcampPhotoUpload = asyncHandler(async (req, res, next) => {
         `${process.env.FILE_UPLOAD_PATH}/${bootcamp.name}${bootcamp._id}/${file.name}`
       );
       await Bootcamp.findByIdAndUpdate(req.params.id, {
-        photo: `${proccess.env.SERVER_NAME}/uploads/${bootcamp.name}${bootcamp._id}/${file.name}`,
+        photo: `${process.env.SERVER_NAME}/uploads/${bootcamp.name}${bootcamp._id}/${file.name}`,
       });
       res.status(200).json({
         success: true,
