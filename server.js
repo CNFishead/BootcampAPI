@@ -12,6 +12,13 @@ import path from "path";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import mongoSanitize from "express-mongo-sanitize";
+import helmet from "helmet";
+import xss from "xss-clean";
+import hpp from "hpp";
+import rateLimit from "express-rate-limit";
+import cors from "cors";
+
 // Load env vars
 dotenv.config({ path: "./config/config.env" });
 
@@ -28,7 +35,26 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
+// File uploading middleware
 app.use(fileupload());
+// Sanitize Data
+app.use(mongoSanitize());
+// Set Security headers
+app.use(helmet());
+// prevent XSS attacks
+app.use(xss());
+// Prevent hpp pollution
+app.use(hpp());
+
+// CORS
+app.use(cors());
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 Minutes
+  max: 100,
+});
+app.use(limiter);
 
 // Set static folder
 const __dirname = path.resolve();
